@@ -1,11 +1,30 @@
 Package: tinyPackage
 Type: Package
-Title: What the Package Does (Title Case)
-Version: 0.1.0
-Author: Who wrote it
-Maintainer: The package maintainer <yourself@somewhere.net>
-Description: More about what it does (maybe more than one line)
-    Use four spaces when indenting paragraphs within the Description.
-License: What license is it under?
-Encoding: UTF-8
+Title: main functions of different packages created by GF
+Version: 3.2.5
+Author: Guillaume Fabre
+Authors@R: 
+    c(person(given = "Guillaume",
+             family = "Fabre",
+             role = c("aut", "cre"),
+             email = "guijoseph.fabre@gmail.com"))
+Maintainer: Guillaume Fabre <guijoseph.fabre@gmail.com> 
+Description: This package has been created in a testing and local needs only. No
+    strong structure nor documentation. 
+License: GPL-3
 LazyData: true
+Depends: R (>= 3.5.0)
+Imports: dplyr, 
+    magrittr,
+    rlang,
+    tidyr,
+    fabR,
+    crayon,
+    janitor,
+    stringr
+Remotes: 
+    GuiFabre/fabR
+URL: https://github.com/GuiFabre/tinypackage/
+BugReports: https://github.com/GuiFabre/tinypackage/issues
+RoxygenNote: 7.2.2
+Encoding: UTF-8
