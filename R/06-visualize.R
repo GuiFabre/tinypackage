@@ -460,7 +460,8 @@ identify_plot_type <- function(dataset = NULL, data_dict, group_by = NULL, out =
 #' }
 #'
 #' @import dplyr lubridate
-open_report <- function(report_name){
+#' @export
+open_visual_report <- function(report_name){
 
   utils::browseURL(paste0(report_name,"/docs/index.html"))
 
