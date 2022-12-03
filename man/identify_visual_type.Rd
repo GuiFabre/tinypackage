@@ -4,7 +4,7 @@
 \alias{identify_visual_type}
 \title{Identify visual type of a variable based on valueType}
 \usage{
-identify_visual_type(dataset, data_dict = data_dict_extract(dataset))
+identify_visual_type(dataset, data_dict)
 }
 \arguments{
 \item{dataset}{A character string or tibble specifying the input dataset}
