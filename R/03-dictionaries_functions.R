@@ -1542,7 +1542,7 @@ to coerce in valueType. This column can be kept for further investigations.",
         rename_with(.cols = "labels", ~ all_of(lab_name_var))
 
     }else if(all(data_dict[['Categories']][['labels']] ==
-                 data_dict[['Categories']][['name']])) {
+                 data_dict[['Categories']][['name']],na.rm = TRUE)) {
       data_dict[['Categories']][['labels']] <- NULL}
 
     # addition of missing if not present
