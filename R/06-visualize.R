@@ -61,14 +61,16 @@ study_visual_report <- function(
     data_dict = NULL,
     group_by = NULL,
     to = paste0("reports/"),
-    out = "plotly",
+    out = "ggplot2",
     .keep_files = FALSE){
 
   if(is.null(data_dict)){data_dict <- data_dict_extract(dataset)}
 
   if(!"summary_1" %in% (data_dict$Variables %>% names)){
 
-    data_dict <- data_dict %>%
+    data_dict$Variables <- data_dict$Variables %>% fabR::add_index(.force = TRUE)
+    data_dict <-
+      data_dict %>%
       identify_visual_type(data_dict = ., dataset = dataset) %>%
       identify_plot_type(data_dict = ., dataset = dataset, group_by = group_by, out = out)
   }
@@ -76,7 +78,7 @@ study_visual_report <- function(
   if(nrow(data_dict$Variables) == 0){
 
     return(message(
-      "[Error]: the name of your dataset has not been found in your data dictionary. Please verify
+"[Error]: the name of your dataset has not been found in your data dictionary. Please verify
 the name of your dataset in your datadictionary (column 'name' in 'Variables' sheet)
 and reprocess."))
   }
@@ -106,10 +108,6 @@ load(file = paste0(file = paste0("',getwd(),"/",to,'/temp_bookdown_report/bookdo
 ```
 --------------------------------------------------------------------------------
 
-
-**Name of the study**: ',data_dict$Variables$project %>% unique,'
-
-**Name of the study dataset**: ',data_dict$Variables$table %>% unique,'
 
 **Number of unique participants**: ',dataset %>% nrow,'
 
@@ -261,21 +259,23 @@ datatable(data_dict$Categories %>% remove_empty("cols"),
 #'
 #' @import readr dplyr tibble
 #' @export
-identify_visual_type <- function(dataset, data_dict = data_dict_extract(dataset)){
-
-  if(is.null(dataset)){
-    dataset <-
-      read_csv("\n", col_names = data_dict$Variables %>% pull(.data$`name`) %>% unique, show_col_types = FALSE) %>%
-      add_row()}
+identify_visual_type <- function(dataset, data_dict){
 
   try({
-    var_names_cat_dd <-
-      data_dict$Categories %>%
-      select(.data$`variable`, code = .data$`name`) %>% unique %>%
-      group_by(.data$`variable`) %>%
-      summarise(code_dd = paste(.data$`code`,collapse = "','")) %>%
-      mutate(code_dd = paste0("c('NA','",.data$`code_dd`,"')")) %>%
-      filter(!is.na(.data$`variable`))
+
+    if(sum(nrow(data_dict[['Categories']])) > 0 ){
+
+      var_names_cat_dd <-
+        data_dict[['Categories']] %>%
+        select(.data$`variable`, code = .data$`name`) %>% unique %>%
+        group_by(.data$`variable`) %>%
+        summarise(code_dd = paste(.data$`code`,collapse = "','")) %>%
+        mutate(code_dd = paste0("c('NA','",.data$`code_dd`,"')")) %>%
+        filter(!is.na(.data$`variable`))
+    }else{
+      var_names_cat_dd <-
+        tibble(variable = as.character(), code = as.character(), code_dd = as.character())
+    }
 
     if(nrow(var_names_cat_dd) == 0){
       data_dict$Variables <- data_dict$Variables %>%
@@ -359,14 +359,20 @@ identify_plot_type <- function(dataset = NULL, data_dict, group_by = NULL, out =
     data_dict$Variables <- data_dict$Variables %>% mutate(viz_type = .data$`valueType`)
   }
 
-  data_dict$Variables <- data_dict$Variables %>%
-    left_join(data_dict$Categories %>%
-                select(name = .data$`variable`, code = .data$`name`, .data$`missing`) %>%
-                filter(.data$`missing` == 1) %>%
-                group_by(.data$`name`) %>%
-                summarise(code_dd = paste(.data$`code`,collapse = "','")) %>%
-                mutate(code_dd = paste0("c('",.data$`code_dd`,"')")) %>%
-                filter(!is.na(.data$`name`))) %>%
+  if(sum(nrow(data_dict[['Categories']])) == 0 ){
+    data_dict[['Categories']] <-
+      tibble(variable = as.character(), name = as.character(), missing = as.logical(), code_dd = as.character())}
+
+  data_dict$Variables <-
+    data_dict$Variables %>%
+    left_join(
+      data_dict$Categories %>%
+        select(name = .data$`variable`, code = .data$`name`, .data$`missing`) %>%
+        filter(.data$`missing` == 1) %>%
+        group_by(.data$`name`) %>%
+        summarise(code_dd = paste(.data$`code`,collapse = "','")) %>%
+        mutate(code_dd = paste0("c('",.data$`code_dd`,"')")) %>%
+        filter(!is.na(.data$`name`))) %>%
     mutate(code_dd = replace_na(.data$`code_dd`,"c()"))
 
   group_by <- ifelse(is.null(group_by),'NULL', paste0("'",group_by,"'"))
