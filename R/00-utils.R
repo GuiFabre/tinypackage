@@ -1,25 +1,3 @@
-#' Call the help center for full documentation
-#'
-#' This function is a direct call of the documentation in the repository hosting the
-#' package. The user accesses the description of the lastest version of the package, the
-#' vignettes, and the list of the functions.
-#'
-#' @examples
-#' \dontrun{
-#' # Example 1: call the help center!
-#'
-#' harmonizR_help()
-#'
-#' }
-#'
-#' @export
-harmonizR_help <- function(){
-
-  utils::browseURL("https://harmonizr-doc.maelstrom-research.org/index.html")
-
-}
-
-
 #' List of valueType in a tibble format according Maelstrom standards
 #'
 #' This function gives the list of authorized valueType values, as described in
@@ -37,7 +15,5 @@ harmonizR_help <- function(){
 #' }
 #' @source xxx
 "valueType_list"
-
-
 
 

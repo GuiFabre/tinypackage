@@ -58,22 +58,13 @@
 #' @export
 study_visual_report <- function(
     dataset,
-    data_dict,
+    data_dict = NULL,
     group_by = NULL,
     to = paste0("reports/"),
     out = "plotly",
     .keep_files = FALSE){
 
-  dataset_name <- if(class(dataset)[1] == "character") {dataset}else{as.character(substitute(dataset)) }
-  dataset      <- if(class(dataset)[1] == "character") { parceval(dataset) }else{ dataset }
-
-  data_dict_name <- if(class(data_dict)[1] == "character") {data_dict}else{as.character(substitute(data_dict)) }
-  data_dict      <- if(class(data_dict)[1] == "character") { parceval(data_dict) }else{ data_dict }
-
-  if(is_empty(data_dict)){data_dict <- data_dict_create(dataset)}
-
-  data_dict$Variables  <- data_dict$Variables %>% filter(table == dataset_name)
-  data_dict$Categories <- data_dict$Categories %>% filter(table == dataset_name)
+  if(is.null(data_dict)){data_dict <- data_dict_extract(dataset)}
 
   if(!"summary_1" %in% (data_dict$Variables %>% names)){
 
@@ -196,7 +187,7 @@ datatable(data_dict$Categories %>% remove_empty("cols"),
 
       paste0("\n</div>\n\n") %>%
       paste0(
-        ifelse(data_dict$Categories %>% filter(variable == data_dict$Variables$name[i]) %>% nrow > 0,
+        ifelse(data_dict$Categories %>% filter(.data$`variable` == data_dict$Variables$name[i]) %>% nrow > 0,
                paste0("\n* **Categories**: ","\n\n") %>%
                  paste0("\n<div style= \"display:flex; margin:auto\" > \n\n") %>%
                  paste0(
@@ -248,6 +239,7 @@ datatable(data_dict$Categories %>% remove_empty("cols"),
 
 }
 
+
 #' Identify visual type of a variable based on valueType
 #'
 #' This helper function analyses the content of a dataset and it data dictionary
@@ -269,28 +261,28 @@ datatable(data_dict$Categories %>% remove_empty("cols"),
 #'
 #' @import readr dplyr tibble
 #' @export
-identify_visual_type <- function(dataset, data_dict = data_dict_create(dataset)){
+identify_visual_type <- function(dataset, data_dict = data_dict_extract(dataset)){
 
   if(is.null(dataset)){
     dataset <-
-      read_csv("\n", col_names = data_dict$Variables %>% pull(name) %>% unique,show_col_types = FALSE) %>%
+      read_csv("\n", col_names = data_dict$Variables %>% pull(.data$`name`) %>% unique, show_col_types = FALSE) %>%
       add_row()}
 
   try({
     var_names_cat_dd <-
       data_dict$Categories %>%
-      select(variable, code = name) %>% unique %>%
-      group_by(variable) %>%
-      summarise(code_dd = paste(code,collapse = "','")) %>%
-      mutate(code_dd = paste0("c('NA','",code_dd,"')")) %>%
-      filter(!is.na(variable))
+      select(.data$`variable`, code = .data$`name`) %>% unique %>%
+      group_by(.data$`variable`) %>%
+      summarise(code_dd = paste(.data$`code`,collapse = "','")) %>%
+      mutate(code_dd = paste0("c('NA','",.data$`code_dd`,"')")) %>%
+      filter(!is.na(.data$`variable`))
 
     if(nrow(var_names_cat_dd) == 0){
       data_dict$Variables <- data_dict$Variables %>%
-        rename(variable = name) %>%
-        filter(variable %in% (dataset %>% names)) %>%
-        mutate(viz_type = valueType) %>%
-        rename(name = variable)
+        rename(variable = .data$`name`) %>%
+        filter(.data$`variable` %in% (dataset %>% names)) %>%
+        mutate(viz_type = .data$`valueType`) %>%
+        rename(name = .data$`variable`)
     }else{
 
       name_var <- dataset[dataset %>% names() %in% (var_names_cat_dd$variable)] %>% names
@@ -302,24 +294,24 @@ identify_visual_type <- function(dataset, data_dict = data_dict_create(dataset))
             dataset[i] %>% unique %>% pull(.) %>% toString(.) %>%
               str_replace_all(", ","','") %>% paste0("c('",.,"')") %>%
               as_tibble() %>% mutate(variable = i) %>%
-              select(variable, code_dataset = value))
+              select(.data$`variable`, code_dataset = .data$`value`))
       }
 
       to_eval <-
         var_name_cat_dataset %>% inner_join(var_names_cat_dd) %>%
-        mutate(to_eval = paste0("all(",code_dataset," %in% ",code_dd,")"))
+        mutate(to_eval = paste0("all(",.data$`code_dataset`," %in% ",.data$`code_dd`,")"))
 
       to_eval <-
-        to_eval %>% rowwise %>% mutate(to_eval = parceval(to_eval)) %>%
-        mutate(viz_type = ifelse(to_eval == TRUE,"categorical","dual")) %>%
-        select(variable,viz_type)
+        to_eval %>% rowwise %>% mutate(to_eval = parceval(.data$`to_eval`)) %>%
+        mutate(viz_type = ifelse(.data$`to_eval` == TRUE,"categorical","dual")) %>%
+        select(.data$`variable`,.data$`viz_type`)
 
       data_dict$Variables <-
-        data_dict$Variables %>% rename(variable = name) %>%
-        left_join(.,to_eval) %>%
-        filter(variable %in% (dataset %>% names)) %>%
-        mutate(viz_type = ifelse(is.na(viz_type), valueType,viz_type)) %>%
-        rename(name = variable)
+        data_dict$Variables %>% rename(variable = .data$`name`) %>%
+        left_join(.,.data$`to_eval`) %>%
+        filter(.data$`variable` %in% (dataset %>% names)) %>%
+        mutate(viz_type = ifelse(is.na(.data$`viz_type`), .data$`valueType`,.data$`viz_type`)) %>%
+        rename(name = .data$`variable`)
     }
 
   },silent = TRUE)
@@ -353,7 +345,7 @@ identify_visual_type <- function(dataset, data_dict = data_dict_create(dataset))
 #' @examples
 #' \dontrun{
 #' # Example 1: plot R stripts for iris variables.
-#' data_dict_create(iris, categories = "Species") %>%
+#' data_dict_extract(iris, categories = "Species") %>%
 #' identify_visual_type(data_dict = ., dataset = iris) %>%
 #'   identify_plot_type(data_dict = ., dataset = iris) %>% .$Variables %>%
 #'   select(name,viz_type, contains("plot"),contains("summary"))
@@ -364,18 +356,18 @@ identify_visual_type <- function(dataset, data_dict = data_dict_create(dataset))
 identify_plot_type <- function(dataset = NULL, data_dict, group_by = NULL, out = "plotly"){
 
   if(! "viz_type" %in% colnames(data_dict$Variables)){
-    data_dict$Variables <- data_dict$Variables %>% mutate(viz_type = valueType)
+    data_dict$Variables <- data_dict$Variables %>% mutate(viz_type = .data$`valueType`)
   }
 
   data_dict$Variables <- data_dict$Variables %>%
     left_join(data_dict$Categories %>%
-                select(name = variable, code = name, missing) %>%
-                filter(missing == 1) %>%
-                group_by(name) %>%
-                summarise(code_dd = paste(code,collapse = "','")) %>%
-                mutate(code_dd = paste0("c('",code_dd,"')")) %>%
-                filter(!is.na(name))) %>%
-    mutate(code_dd = replace_na(code_dd,"c()"))
+                select(name = .data$`variable`, code = .data$`name`, .data$`missing`) %>%
+                filter(.data$`missing` == 1) %>%
+                group_by(.data$`name`) %>%
+                summarise(code_dd = paste(.data$`code`,collapse = "','")) %>%
+                mutate(code_dd = paste0("c('",.data$`code_dd`,"')")) %>%
+                filter(!is.na(.data$`name`))) %>%
+    mutate(code_dd = replace_na(.data$`code_dd`,"c()"))
 
   group_by <- ifelse(is.null(group_by),'NULL', paste0("'",group_by,"'"))
 
@@ -383,53 +375,53 @@ identify_plot_type <- function(dataset = NULL, data_dict, group_by = NULL, out =
     data_dict$Variables %>%
     mutate(
       plot_1 = case_when(
-        viz_type == "text"                              ~ paste0('plot_main_word(dataset = dataset,col = "',name,'" , missing_values = "',code_dd,'", out = "',out,'-code", group_by = ',group_by,')') ,
-        viz_type == "decimal"                           ~ paste0('plot_box(      dataset = dataset,col = "',name,'" , missing_values = "',code_dd,'", out = "',out,'-code", group_by = ',group_by,')') ,
-        viz_type == "integer"                           ~ paste0('plot_box(      dataset = dataset,col = "',name,'" , missing_values = "',code_dd,'", out = "',out,'-code", group_by = ',group_by,')') ,
-        viz_type == "date"                              ~ paste0('plot_date(     dataset = dataset,col = "',name,'" , missing_values = "',code_dd,'", out = "',out,'-code", group_by = ',group_by,' , time = "year")'),
+        .data$`viz_type` == "text"                              ~ paste0('plot_main_word(dataset = dataset,col = "',.data$`name`,'" , missing_values = "',.data$`code_dd`,'", out = "',out,'-code", group_by = ',group_by,')') ,
+        .data$`viz_type` == "decimal"                           ~ paste0('plot_box(      dataset = dataset,col = "',.data$`name`,'" , missing_values = "',.data$`code_dd`,'", out = "',out,'-code", group_by = ',group_by,')') ,
+        .data$`viz_type` == "integer"                           ~ paste0('plot_box(      dataset = dataset,col = "',.data$`name`,'" , missing_values = "',.data$`code_dd`,'", out = "',out,'-code", group_by = ',group_by,')') ,
+        .data$`viz_type` == "date"                              ~ paste0('plot_date(     dataset = dataset,col = "',.data$`name`,'" , missing_values = "',.data$`code_dd`,'", out = "',out,'-code", group_by = ',group_by,' , time = "year")'),
 
-        viz_type == "dual"  & valueType == "text"       ~ paste0('plot_main_word(dataset = dataset,col = "',name,'" , missing_values = "',code_dd,'", out = "',out,'-code", group_by = ',group_by,')') ,
-        viz_type == "dual"  & valueType == "decimal"    ~ paste0('plot_density(  dataset = dataset,col = "',name,'" , missing_values = "',code_dd,'", out = "',out,'-code", group_by = ',group_by,')') ,
-        viz_type == "dual"  & valueType == "integer"    ~ paste0('plot_box(      dataset = dataset,col = "',name,'" , missing_values = "',code_dd,'", out = "',out,'-code", group_by = ',group_by,')') ,
-        viz_type == "dual"  & valueType == "date"       ~ paste0('plot_date(     dataset = dataset,col = "',name,'" , missing_values = "',code_dd,'", out = "',out,'-code", group_by = ',group_by,' , time = "year")') ,
+        .data$`viz_type` == "dual"  & .data$`valueType` == "text"       ~ paste0('plot_main_word(dataset = dataset,col = "',.data$`name`,'" , missing_values = "',.data$`code_dd`,'", out = "',out,'-code", group_by = ',group_by,')') ,
+        .data$`viz_type` == "dual"  & .data$`valueType` == "decimal"    ~ paste0('plot_density(  dataset = dataset,col = "',.data$`name`,'" , missing_values = "',.data$`code_dd`,'", out = "',out,'-code", group_by = ',group_by,')') ,
+        .data$`viz_type` == "dual"  & .data$`valueType` == "integer"    ~ paste0('plot_box(      dataset = dataset,col = "',.data$`name`,'" , missing_values = "',.data$`code_dd`,'", out = "',out,'-code", group_by = ',group_by,')') ,
+        .data$`viz_type` == "dual"  & .data$`valueType` == "date"       ~ paste0('plot_date(     dataset = dataset,col = "',.data$`name`,'" , missing_values = "',.data$`code_dd`,'", out = "',out,'-code", group_by = ',group_by,' , time = "year")') ,
         TRUE                      ~ "'message(\"\")'"))
 
   data_dict$Variables <-
     data_dict$Variables %>%
     mutate(
       plot_2 = case_when(
-        viz_type == "decimal"                           ~ paste0('plot_density(  dataset = dataset,col = "',name,'" , missing_values = "',code_dd,'", out = "',out,'-code", group_by = ',group_by,')') ,
-        viz_type == "integer"                           ~ paste0('plot_histogram(dataset = dataset,col = "',name,'" , missing_values = "',code_dd,'", out = "',out,'-code", group_by = ',group_by,')') ,
-        viz_type == "categorical"                       ~ paste0('plot_bar(      dataset = dataset,col = "',name,'"                                 , out = "',out,'-code", group_by = ',group_by,')') ,
-        viz_type == "dual"  & valueType == "decimal"    ~ paste0('plot_box(      dataset = dataset,col = "',name,'" , missing_values = "',code_dd,'", out = "',out,'-code", group_by = ',group_by,')') ,
-        viz_type == "dual"  & valueType == "integer"    ~ paste0('plot_histogram(dataset = dataset,col = "',name,'" , missing_values = "',code_dd,'", out = "',out,'-code", group_by = ',group_by,')') ,
+        .data$`viz_type` == "decimal"                           ~ paste0('plot_density(  dataset = dataset,col = "',.data$`name`,'" , missing_values = "',.data$`code_dd`,'", out = "',out,'-code", group_by = ',group_by,')') ,
+        .data$`viz_type` == "integer"                           ~ paste0('plot_histogram(dataset = dataset,col = "',.data$`name`,'" , missing_values = "',.data$`code_dd`,'", out = "',out,'-code", group_by = ',group_by,')') ,
+        .data$`viz_type` == "categorical"                       ~ paste0('plot_bar(      dataset = dataset,col = "',.data$`name`,'"                                         , out = "',out,'-code", group_by = ',group_by,')') ,
+        .data$`viz_type` == "dual"  & .data$`valueType` == "decimal"    ~ paste0('plot_box(      dataset = dataset,col = "',.data$`name`,'" , missing_values = "',.data$`code_dd`,'", out = "',out,'-code", group_by = ',group_by,')') ,
+        .data$`viz_type` == "dual"  & .data$`valueType` == "integer"    ~ paste0('plot_histogram(dataset = dataset,col = "',.data$`name`,'" , missing_values = "',.data$`code_dd`,'", out = "',out,'-code", group_by = ',group_by,')') ,
         TRUE                      ~ "'message(\"\")'"))
 
   data_dict$Variables <-
     data_dict$Variables %>%
     mutate(
       plot_3 = case_when(
-        viz_type == "categorical"                       ~ paste0('plot_pie(      dataset = dataset,col = "',name,'" ,                                 out = "',out,'-code", group_by = ',group_by,')'),
+        .data$`viz_type` == "categorical"                       ~ paste0('plot_pie(      dataset = dataset,col = "',.data$`name`,'" ,                                 out = "',out,'-code", group_by = ',group_by,')'),
         TRUE                      ~ "'message(\"\")'"))
 
   data_dict$Variables <-
     data_dict$Variables %>%
-    mutate(plot_4 =                              paste0('plot_pie_valid_value(   dataset = dataset,col = "',name,'" , missing_values = "',code_dd,'", out = "',out,'-code", group_by = ',group_by,')'))
+    mutate(plot_4 =                              paste0('plot_pie_valid_value(   dataset = dataset,col = "',.data$`name`,'" , missing_values = "',.data$`code_dd`,'", out = "',out,'-code", group_by = ',group_by,')'))
 
   data_dict$Variables <-
     data_dict$Variables %>%
     mutate(
       summary_1 = case_when(
-        viz_type == "text"                              ~ paste0('summary_text(     dataset = dataset,col = "',name,'", missing_values = "',code_dd,'", out = "DT-code", group_by = ',group_by,')'),
-        viz_type == "decimal"                           ~ paste0('summary_numerical(dataset = dataset,col = "',name,'", missing_values = "',code_dd,'", out = "DT-code", group_by = ',group_by,')'),
-        viz_type == "integer"                           ~ paste0('summary_numerical(dataset = dataset,col = "',name,'", missing_values = "',code_dd,'", out = "DT-code", group_by = ',group_by,')'),
-        viz_type == "date"                              ~ paste0('summary_text(     dataset = dataset,col = "',name,'", missing_values = "',code_dd,'", out = "DT-code", group_by = ',group_by,')'),
-        viz_type == "categorical"                       ~ paste0('summary_category( dataset = dataset,col = "',name,'", missing_values = "',code_dd,'", out = "DT-code", group_by = ',group_by,')'),
+        .data$`viz_type` == "text"                              ~ paste0('summary_text(     dataset = dataset,col = "',.data$`name`,'", missing_values = "',.data$`code_dd`,'", out = "DT-code", group_by = ',group_by,')'),
+        .data$`viz_type` == "decimal"                           ~ paste0('summary_numerical(dataset = dataset,col = "',.data$`name`,'", missing_values = "',.data$`code_dd`,'", out = "DT-code", group_by = ',group_by,')'),
+        .data$`viz_type` == "integer"                           ~ paste0('summary_numerical(dataset = dataset,col = "',.data$`name`,'", missing_values = "',.data$`code_dd`,'", out = "DT-code", group_by = ',group_by,')'),
+        .data$`viz_type` == "date"                              ~ paste0('summary_text(     dataset = dataset,col = "',.data$`name`,'", missing_values = "',.data$`code_dd`,'", out = "DT-code", group_by = ',group_by,')'),
+        .data$`viz_type` == "categorical"                       ~ paste0('summary_category( dataset = dataset,col = "',.data$`name`,'", missing_values = "',.data$`code_dd`,'", out = "DT-code", group_by = ',group_by,')'),
 
-        viz_type == "dual"  & valueType == "text"       ~ paste0('summary_text(     dataset = dataset,col = "',name,'", missing_values = "',code_dd,'", out = "DT-code", group_by = ',group_by,')'),
-        viz_type == "dual"  & valueType == "decimal"    ~ paste0('summary_numerical(dataset = dataset,col = "',name,'", missing_values = "',code_dd,'", out = "DT-code", group_by = ',group_by,')'),
-        viz_type == "dual"  & valueType == "integer"    ~ paste0('summary_numerical(dataset = dataset,col = "',name,'", missing_values = "',code_dd,'", out = "DT-code", group_by = ',group_by,')'),
-        viz_type == "dual"  & valueType == "date"       ~ paste0('summary_text(     dataset = dataset,col = "',name,'", missing_values = "',code_dd,'", out = "DT-code", group_by = ',group_by,')'),
+        .data$`viz_type` == "dual"  & .data$`valueType` == "text"       ~ paste0('summary_text(     dataset = dataset,col = "',.data$`name`,'", missing_values = "',.data$`code_dd`,'", out = "DT-code", group_by = ',group_by,')'),
+        .data$`viz_type` == "dual"  & .data$`valueType` == "decimal"    ~ paste0('summary_numerical(dataset = dataset,col = "',.data$`name`,'", missing_values = "',.data$`code_dd`,'", out = "DT-code", group_by = ',group_by,')'),
+        .data$`viz_type` == "dual"  & .data$`valueType` == "integer"    ~ paste0('summary_numerical(dataset = dataset,col = "',.data$`name`,'", missing_values = "',.data$`code_dd`,'", out = "DT-code", group_by = ',group_by,')'),
+        .data$`viz_type` == "dual"  & .data$`valueType` == "date"       ~ paste0('summary_text(     dataset = dataset,col = "',.data$`name`,'", missing_values = "',.data$`code_dd`,'", out = "DT-code", group_by = ',group_by,')'),
         TRUE                      ~ NA_character_))
   # this_dd <<- data_dict
 
@@ -1099,7 +1091,9 @@ plot_pie              <- function(dataset = "iris", col = "Species", filter = 'c
 #'
 #' # Example 2: graph of Species (virginica is associated to missing values for the
 #' # purpose of example)
-#' plot_pie_valid_value(dataset = dataset,col = "Species",missing_values = "'virginica'" , out = "ggplot2")
+#' plot_pie_valid_value(
+#'    dataset = dataset,col = "Species",
+#'    missing_values = "'virginica'" , out = "ggplot2")
 #'
 #' }
 #'
@@ -1130,7 +1124,7 @@ plot_pie_valid_value  <- function(dataset = "iris", col = "Species", filter = 'c
     plot <- paste0(
       plot," %>% "                                                           ,"\n",
       "  ggplot(aes(x = '', y = n, fill = ",col,")) +"                       ,"\n",
-      "  geom_bar(stat='identity', width = 1, position = position_fill()) + "  ,"\n",
+      "  geom_bar(stat='identity', width = 1, position = position_fill()) + ","\n",
       "  coord_polar('y', start=0) + "                                       ,"\n",
       "  theme_void() + "                                                    ,"\n",
       "  scale_fill_viridis(discrete = TRUE) + "                             ,"\n",

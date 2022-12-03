@@ -1,7 +1,7 @@
 Package: tinyPackage
 Type: Package
 Title: main functions of different packages created by GF
-Version: 3.2.5
+Version: 1.0.0
 Author: Guillaume Fabre
 Authors@R: 
     c(person(given = "Guillaume",
@@ -21,7 +21,17 @@ Imports: dplyr,
     fabR,
     crayon,
     janitor,
-    stringr
+    stringr,
+    DT, 
+    bookdown, 
+    fs, 
+    ggplot2, 
+    lubridate, 
+    readr, 
+    tibble,
+    tidytext, 
+    viridis,
+    haven
 Remotes: 
     GuiFabre/fabR
 URL: https://github.com/GuiFabre/tinypackage/
