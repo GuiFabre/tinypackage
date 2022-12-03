@@ -6,10 +6,10 @@
 \usage{
 study_visual_report(
   dataset,
-  data_dict,
+  data_dict = NULL,
   group_by = NULL,
   to = paste0("reports/"),
-  out = "plotly",
+  out = "ggplot2",
   .keep_files = FALSE
 )
 }
