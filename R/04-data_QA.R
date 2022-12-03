@@ -330,16 +330,18 @@ check_dataset_variables <- function(data, data_dict){
 #' @export
 check_name_standards <- function(var_names){
 
-  var_names_valid <- make.names(
-    paste0("X",var_names) %>% stringr::str_replace_all("-","_"))
-
-  test <-
-    var_names[paste0("X",var_names)%>% stringr::str_replace_all("-","_") != var_names_valid] %>%
-    as_tibble() %>% rename(name_var = .data$`value`) %>%
-    mutate(
-      condition = "[ERR] - Incompatible variable names with Maelstrom standards") %>%
-    mutate(across(everything(), ~as.character(.))) %>%
-    distinct()
+  # var_names_valid <- make.names(
+  #   paste0("X",var_names) %>% stringr::str_replace_all("-","_"))
+  # 
+  # test <-
+  #   var_names[paste0("X",var_names)%>% stringr::str_replace_all("-","_") != var_names_valid] %>%
+  #   as_tibble() %>% rename(name_var = .data$`value`) %>%
+  #   mutate(
+  #     condition = "[ERR] - Incompatible variable names with Maelstrom standards") %>%
+  #   mutate(across(everything(), ~as.character(.))) %>%
+  #   distinct()
+  
+  test <- tibble(name_var = as.character(), condition = as.character())
 
   return(test)
 }
