@@ -566,48 +566,6 @@ data_dict_pivot_longer <- function(data_dict, taxonomy = NULL){
 #' xxx xxx xxx.
 #'
 #' @param data_dict xxx xxx xxx
-#'
-#' @return xxx xxx xxx.
-#'
-#' @examples
-#' \dontrun{
-#' # Example 1: xxx xxx xxx.
-#'
-#' }
-#'
-#' @import dplyr tidyr
-#' @importFrom magrittr %>%
-#' @importFrom rlang .data
-#' @export
-data_dict_opalr_fix <- function(data_dict){
-
-  # test if actually an opalr data dictionary
-  if(data_dict %>% names %in% c("variables", "table", "project") %>% sum != 3){
-    stop("Your file is not in the opalr format. Please provide another file")}
-
-  data_dict[['Variables']]  <-
-    data_dict[['variables']] %>% as_tibble() %>%
-    mutate(across(everything(), ~ as.character(.))) %>%
-    mutate(across(everything(), ~ na_if(.,"")))
-
-  if(sum(nrow(data_dict[['categories']])) > 0){
-    data_dict[['Categories']] <-
-      data_dict[['categories']] %>% as_tibble() %>%
-      mutate(across(everything(), ~ as.character(.))) %>%
-      mutate(across(everything(), ~ na_if(.,"")))
-  }
-
-  data_dict[['variables']]  <- NULL
-  data_dict[['categories']] <- NULL
-
-  return(data_dict)
-}
-
-#' xxx xxx xxx
-#'
-#' xxx xxx xxx.
-#'
-#' @param data_dict xxx xxx xxx
 #' @param filter_var xxx xxx xxx
 #' @param filter_cat xxx xxx xxx
 #' @param filter_all xxx xxx xxx

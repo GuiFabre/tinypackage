@@ -253,7 +253,7 @@ study_assessement_report <- function(study = NULL, dataset = NULL, data_dict = N
           `Mix cat. and other values` = ifelse(.data$`Mix cat. and other values` == "dual","YES",NA_character_))
     }else{check_category_values <- dataset_summary %>% slice(0) %>% add_column(`Quality assessment comment` = NA_character_)}
 
-    if(dataset %>% nrow > 0){
+    if(dataset %>% nrow > 0 & FALSE){
       message("Compare valueType in data dictionary and dataset data type in dataset") # + table
       check_valueType_adequacy <-
         check_dataset_valueType(dataset, data_dict) %>%
@@ -880,7 +880,7 @@ summary_variables_text <- function(name_var, dict_var){
 #'
 #' }
 #'
-#' @import dplyr
+#' @import dplyr lubridate
 summary_variables_date <- function(name_var, dict_var){
 
   # i = "dob"

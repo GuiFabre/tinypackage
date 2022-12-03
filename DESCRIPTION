@@ -29,8 +29,6 @@ Imports: dplyr,
     lubridate, 
     readr, 
     tibble,
-    tidytext, 
-    viridis,
     haven
 Remotes: 
     GuiFabre/fabR
