@@ -1667,7 +1667,9 @@ new name: ",new_name)
 
   if(sum(nrow(data_dict[['Categories']])) > 0){
     data_dict[['Categories']] <-
-      data_dict[['Categories']] %>%
+      data_dict[['Variables']]['name'] %>%
+      rename(variable = .data$`name`) %>%
+      inner_join(data_dict[['Categories']],by='variable') %>%
       select(.data$`variable`,.data$`name`,matches(c("^label$","^label:[[:alnum:]]")),everything()) %>%
       janitor::remove_empty("cols")}
 
