@@ -62,7 +62,7 @@ study_visual_report <- function(
     group_by = NULL,
     to = paste0("reports/"),
     out = "ggplot2",
-    .keep_files = FALSE){
+    .keep_files = TRUE){
 
   if(is.null(data_dict)){data_dict <- data_dict_extract(dataset)}
 
@@ -229,7 +229,7 @@ datatable(data_dict$Categories %>% remove_empty("cols"),
 
   if(.keep_files == FALSE){dir_delete(paste0(to,"/temp_bookdown_report/"))}
 
-  browseURL(paste0(to,"/docs/index.html"))
+  # browseURL(paste0(to,"/docs/index.html"))
 
 
   return(message(paste0("\n\nTo edit your file, open: ",
